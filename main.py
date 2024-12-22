@@ -2,7 +2,7 @@ import json
 from flask import Flask, request, jsonify
 import requests
 
-app = Flask(name)
+app = Flask(__name__)
 
 # Конфигурация
 SETTINGS_FILE = 'settings.json'
