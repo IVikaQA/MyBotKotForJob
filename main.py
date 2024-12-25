@@ -9,7 +9,7 @@ SETTINGS_FILE = 'settings.json'
 BOT_STATE = {"enabled": False}  # Состояние бота
 AUTHORIZED_PHONE = '89119877112'  # Абонент-2
 RESPOND_PHONE = '89052352883'  # Абонент-1 (сам бот)
-BOT_USER = {"fio": "Смирнов Константин", "tab_number": "475"}  # Данные абонента-2
+BOT_USER = {"fio": "Смирнов КВ", "tab_number": "475"}  # Данные абонента-2
 
 # URL API для отправки сообщений
 TOKEN = 'nIx0p3JeG4NP4gBOrgWUfPIDRmESrxgF'
