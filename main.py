@@ -1,21 +1,23 @@
 import json
+import re
 from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
 
-# Конфигурация
+# Configuration
 SETTINGS_FILE = 'settings.json'
-BOT_STATE = {"enabled": False}  # Состояние бота
-AUTHORIZED_PHONE = '89119877112'  # Абонент-2
-RESPOND_PHONE = '89052352883'  # Абонент-1 (сам бот)
-BOT_USER = {"fio": "Смирнов КВ", "tab_number": "475"}  # Данные абонента-2
+BOT_STATE = {"enabled": False}  # Bot status
+AUTHORIZED_PHONE = '89119877112'  # Authorized phone number
+RESPOND_PHONE = '89052352883'    # Bot phone number
+BOT_USER = {"fio": "Смирнов КВ", "tab_number": "475"}  # Authorized user details
 
-# URL API для отправки сообщений
+# WhatsApp API URL and token
 TOKEN = 'nIx0p3JeG4NP4gBOrgWUfPIDRmESrxgF'
 API_URL = 'https://gate.whapi.cloud/messages/text'
 
-# Функции для работы с файлом настроек
+# Load settings
+
 def load_settings():
     global BOT_STATE, BOT_USER, RESPOND_PHONE
     try:
@@ -43,18 +45,25 @@ def save_settings():
         print(f"Error saving settings: {e}")
 
 
-# Загружаем настройки при старте
+# Load settings on startup
 load_settings()
 
-
-# Функция для отправки сообщения
+# Function to send a message
 def send_message(to, body):
+    """
+    :param to: Full WhatsApp ID, e.g., '120363381745770655@g.us' or '996507118299@s.whatsapp.net'
+    :param body: Text message to send
+    """
+    # Validate "to" parameter
+    if not isinstance(to, str) or not re.match(r'^[\d-]{10,31}(@[\w\.]{1,})?$', to):
+        raise ValueError(f"Invalid 'to' parameter: {to}")
+
     headers = {
         'Authorization': f'Bearer {TOKEN}',
         'Content-Type': 'application/json',
     }
     payload = {
-        "to": f"{to}@s.whatsapp.net",
+        "to": to,
         "body": body,
     }
     response = requests.post(API_URL, json=payload, headers=headers)
@@ -62,7 +71,6 @@ def send_message(to, body):
     return response.json()
 
 
-# Маршрут для обработки сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -70,44 +78,30 @@ def webhook():
         data = json.loads(raw_data)
         print(f"Incoming data: {data}")
 
-        # Обрабатываем только события типа "messages"
+        # We only care if event type is 'messages'
         if data.get("event", {}).get("type") == "messages":
             for message in data.get('messages', []):
-                user_phone = message['from']
-                text = message['text']['body'].lower()
+                chat_id = message.get('chat_id')      # e.g. '120363381745770655@g.us'
+                from_phone = message.get('from')      # e.g. '996507118299'
+                text_body = message['text']['body']   # e.g. 'сегодня'
+                text_lower = text_body.lower()
 
-                # Если сообщение от самого RESPOND_PHONE (сам бот)
-                if user_phone == RESPOND_PHONE:
-                    # Обработка команд управления ботом
-                    if text == "turnon":
-                        if not BOT_STATE["enabled"]:
-                            BOT_STATE["enabled"] = True
-                            save_settings()
-                            send_message(RESPOND_PHONE, "Бот включен.")
-                            print("Bot enabled.")
-                        else:
-                            send_message(RESPOND_PHONE, "Бот уже включен.")
-                    elif text == "turnoff":
-                        if BOT_STATE["enabled"]:
-                            BOT_STATE["enabled"] = False
-                            save_settings()
-                            send_message(RESPOND_PHONE, "Бот отключен.")
-                            print("Bot disabled.")
-                        else:
-                            send_message(RESPOND_PHONE, "Бот уже отключен.")
+                # Validate chat_id
+                if not chat_id or not re.match(r'^[\d-]{10,31}(@[\w\.]{1,})?$', chat_id):
+                    print(f"Invalid chat_id: {chat_id}")
+                    continue
 
-
-# Если сообщение от AUTHORIZED_PHONE и бот включён
-                elif user_phone == AUTHORIZED_PHONE and BOT_STATE["enabled"]:
-                    # Проверяем ключевые слова
-                    if any(keyword in text for keyword in ['сегодня', 'завтра', 'в день', 'в ночь']):
+                # If the bot is enabled and the sender is our authorized phone
+                if BOT_STATE["enabled"] and from_phone == AUTHORIZED_PHONE:
+                    # Check if the user said certain keywords
+                    if any(keyword in text_lower for keyword in ['сегодня', 'завтра', 'в день', 'в ночь']):
                         response_text = f"{BOT_USER['fio']}, таб.номер {BOT_USER['tab_number']}"
-                        send_message(AUTHORIZED_PHONE, response_text)
-                        print(f"Message sent to {AUTHORIZED_PHONE}: {response_text}")
+
+                        # Reply back to the same chat_id (group or private)
+                        send_message(chat_id, response_text)
+                        print(f"Sent reply to {chat_id}")
                     else:
-                        print("No relevant keywords found. Ignoring.")
-                else:
-                    print(f"Message from unauthorized or irrelevant phone: {user_phone}")
+                        print("No relevant keywords found in message. Ignoring.")
 
         return jsonify({"status": "ok"}), 200
 
@@ -116,5 +110,6 @@ def webhook():
         return jsonify({"error": "Internal server error"}), 500
 
 
-if __name__ == 'main':
-    app.run(debug=True, host='0.0.0.0', port=3000)
+if __name__ == '__main__':
+    port = int(3000)  # Использует PORT из окружения, иначе 3000
+    app.run(host='0.0.0.0', port=port, debug=True)
