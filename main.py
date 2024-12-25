@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Конфигурация
 SETTINGS_FILE = 'settings.json'
 BOT_STATE = {"enabled": False}  # Состояние бота
-AUTHORIZED_PHONE = '89313638646'  # Абонент-2
+AUTHORIZED_PHONE = '89119877112'  # Абонент-2
 RESPOND_PHONE = '89052352883'  # Абонент-1 (сам бот)
 BOT_USER = {"fio": "Смирнов Константин", "tab_number": "475"}  # Данные абонента-2
 
