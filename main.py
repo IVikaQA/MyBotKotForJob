@@ -9,7 +9,7 @@ app = Flask(__name__)
 SETTINGS_FILE = 'settings.json'
 BOT_STATE = {"enabled": False}  # Bot status
 AUTHORIZED_PHONE = '996507118299'  # Authorized phone number
-RESPOND_PHONE = '7921631-26-91'    # Bot phone number
+RESPOND_PHONE = '79216312691'    # Bot phone number
 BOT_USER = {"fio": "Смирнов КВ", "tab_number": "475"}  # Authorized user details
 
 # WhatsApp API URL and token
