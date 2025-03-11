@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Configuration
 SETTINGS_FILE = 'settings.json'
 BOT_STATE = {"enabled": False}  # Bot status
-AUTHORIZED_PHONE = '79119877112'  # Authorized phone number
+AUTHORIZED_PHONE = '7777'  # Authorized phone number
 RESPOND_PHONE = '79052352883'    # Bot phone number
 BOT_USER = {"fio": "Смирнов КВ", "tab_number": "475"}  # Authorized user details
 
